@@ -1,0 +1,16 @@
+      - name: Build, tag, and push image to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ inputs.service }}
+          IMAGE_TAG: ${{ github.sha }}
+          GH_PERSONAL_ACCESS_TOKEN: ${{ secrets.PAT }}
+        working-directory: ${{ inputs.working-directory || inputs.service }}
+        run: |
+          docker build \
+            ${{ inputs.extra-args }} \
+            --build-arg GH_PERSONAL_ACCESS_TOKEN="$GH_PERSONAL_ACCESS_TOKEN" \
+            --cache-from $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+            -f ${{ inputs.dockerfile }} .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY --all-tags
